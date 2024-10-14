@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos</title>
+    <style>
+        /* Estilos para el modal */
+     /* Estilos generales */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+h1, h2 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+/* Estilos para formularios */
+form {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+input[type="text"], input[type="number"], select {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Estilos para las tablas */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+th {
+    background-color: #007bff;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Estilos para el modal */
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 5px;
+}
+
+.modal h3 {
+    margin: 0 0 10px;
+}
+
+.modal table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modal th, .modal td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+
+.modal button {
+    margin-top: 10px;
+}
+
+/* Fondo oscuro para el modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+}
+
+
+        
+    </style>
+    <script>
+        async function cargarProductos() {
+            const response = await fetch('/api/productos');
+            const productos = await response.json();
+            const tabla = document.getElementById('productos-tabla-body');
+            tabla.innerHTML = ''; // Limpiar la tabla
+
+            productos.forEach(producto => {
+                tabla.innerHTML += `
+                    <tr>
+                        <td>${producto.id_producto}</td>
+                        <td>${producto.nombre}</td>
+                        <td>$${producto.precio.toFixed(2)}</td>
+                        <td>${producto.stock}</td>
+                        <td>${producto.categoria}</td>
+                        <td>
+                            <button onclick="eliminarProducto(${producto.id_producto})">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function agregarProducto() {
+            const nombre = document.getElementById('nombre').value;
+            const precio = document.getElementById('precio').value;
+            const stock = document.getElementById('stock').value;
+            const categoria = document.getElementById('categoria').value;
+
+            await fetch('/api/productos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ nombre, precio, stock, categoria }),
+            });
+
+            cargarProductos();
+            document.getElementById('form-producto').reset();
+        }
+
+        async function eliminarProducto(id) {
+            await fetch(`/api/productos/${id}`, {
+                method: 'DELETE',
+            });
+            cargarProductos();
+        }
+
+        async function cargarVentas() {
+            const response = await fetch('/api/ventas');
+            const ventas = await response.json();
+            const tabla = document.getElementById('ventas-tabla-body');
+            tabla.innerHTML = '';
+
+            ventas.forEach(venta => {
+                tabla.innerHTML += `
+                    <tr>
+                        <td>${venta.id_venta}</td>
+                        <td>${venta.fecha}</td>
+                        <td>$${venta.total.toFixed(2)}</td>
+                        <td>
+                            <button onclick="verDetalles(${venta.id_venta})">Detalles</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function agregarVenta() {
+            const id_cliente = document.getElementById('id_cliente').value;
+            const total = document.getElementById('total').value;
+
+            const response = await fetch('/api/ventas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id_cliente, total }),
+            });
+
+            const data = await response.json();
+            const id_venta = data.id_venta;
+
+            const productoSelect = document.getElementById('producto-select');
+            const cantidad = document.getElementById('cantidad').value;
+            const precio_unitario = productoSelect.options[productoSelect.selectedIndex].dataset.precio;
+
+            await fetch('/api/detalle_ventas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id_venta, id_producto: productoSelect.value, cantidad, precio_unitario }),
+            });
+
+            cargarVentas();
+            document.getElementById('form-venta').reset();
+        }
+
+        async function verDetalles(id_venta) {
+            const response = await fetch(`/api/detalle_ventas/${id_venta}`);
+            const detalles = await response.json();
+            let detallesHtml = '<h3>Detalles de la Venta</h3><table border="1"><thead><tr><th>ID Producto</th><th>Nombre</th><th>Cantidad</th><th>Precio Unitario</th></tr></thead><tbody>';
+
+            detalles.forEach(detalle => {
+                detallesHtml += `
+                    <tr>
+                        <td>${detalle.id_producto}</td>
+                        <td>${detalle.nombre}</td>
+                        <td>${detalle.cantidad}</td>
+                        <td>$${detalle.precio_unitario.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            detallesHtml += '</tbody></table>';
+
+            // Crear el modal
+            const modalOverlay = document.createElement('div');
+            modalOverlay.classList.add('modal-overlay');
+
+            const modal = document.createElement('div');
+            modal.classList.add('modal');
+            modal.innerHTML = detallesHtml;
+
+            const closeButton = document.createElement('button');
+            closeButton.textContent = 'Cerrar';
+            closeButton.onclick = () => {
+                document.body.removeChild(modalOverlay);
+            };
+            modal.appendChild(closeButton);
+            modalOverlay.appendChild(modal);
+            document.body.appendChild(modalOverlay);
+        }
+
+        window.onload = () => {
+            cargarProductos();
+            cargarVentas();
+        };
+
+        async function obtenerDetallesVenta(id_venta) {
+    try {
+        const response = await fetch(`/api/detalle_ventas/${id_venta}`);
+        if (!response.ok) {
+            throw new Error('Error al obtener detalles de la venta');
+        }
+        const detalles = await response.json();
+        console.log(detalles); // Muestra los detalles en la consola para verificar
+        // Aquí puedes manejar la lógica para mostrar los detalles en tu UI
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Llama a esta función con el ID de la venta cuando se haga clic en "detalles"
+obtenerDetallesVenta(1); // Reemplaza 1 con el ID de la venta que deseas obtener
+
+async function cargarProductos() {
+    const response = await fetch('/api/productos');
+    const productos = await response.json();
+    
+    const tabla = document.getElementById('productos-tabla-body');
+    const productoSelect = document.getElementById('producto-select');
+    
+    tabla.innerHTML = ''; // Limpiar la tabla
+    productoSelect.innerHTML = '<option value="">Seleccionar producto</option>'; // Limpiar y añadir opción por defecto
+
+    productos.forEach(producto => {
+        tabla.innerHTML += `
+            <tr>
+                <td>${producto.id_producto}</td>
+                <td>${producto.nombre}</td>
+                <td>$${producto.precio.toFixed(2)}</td>
+                <td>${producto.stock}</td>
+                <td>${producto.categoria}</td>
+                <td>
+                    <button onclick="eliminarProducto(${producto.id_producto})">Eliminar</button>
+                </td>
+            </tr>
+        `;
+
+        // Agregar opciones al select de productos
+        productoSelect.innerHTML += `
+            <option value="${producto.id_producto}" data-precio="${producto.precio}">${producto.nombre}</option>
+        `;
+    });
+}
+
+
+
+    </script>
+</head>
+<body>
+    <h1>Gestión de Productos</h1>
+
+    <h2>Agregar Producto</h2>
+    <form id="form-producto" onsubmit="event.preventDefault(); agregarProducto();">
+        <input type="text" id="nombre" placeholder="Nombre" required>
+        <input type="number" id="precio" placeholder="Precio" step="0.01" required>
+        <input type="number" id="stock" placeholder="Stock" required>
+        <input type="text" id="categoria" placeholder="Categoría" required>
+        <button type="submit">Agregar Producto</button>
+    </form>
+
+    <h2>Lista de Productos</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Categoría</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="productos-tabla-body"></tbody>
+    </table>
+
+    <h2>Agregar Venta</h2>
+    <form id="form-venta" onsubmit="event.preventDefault(); agregarVenta();">
+        <input type="number" id="id_cliente" placeholder="ID Cliente" required>
+        <input type="number" id="total" placeholder="Total" step="0.01" required>
+        <select id="producto-select" required>
+            <option value="">Seleccionar producto</option>
+        </select>
+        <input type="number" id="cantidad" placeholder="Cantidad" required>
+        <button type="submit">Agregar Venta</button>
+    </form>
+
+    <h2>Lista de Ventas</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID Venta</th>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="ventas-tabla-body"></tbody>
+    </table>
+
+    <div id="detalles-venta"></div>
+</body>
+</html>
