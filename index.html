@@ -120,10 +120,87 @@ tr:nth-child(even) {
     z-index: 999;
 }
 
+.oculto {
+    display: none;
+}
+/* Estilos para el formulario de login */
+#login-section {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 30px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    margin: 0 auto;
+    margin-top: 100px; /* Centrar verticalmente */
+}
+
+#login-section h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+#login-section input[type="text"],
+#login-section input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+#login-section button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 16px;
+}
+
+#login-section button:hover {
+    background-color: #0056b3;
+}
 
         
     </style>
     <script>
+        
+
+        
+
+        document.addEventListener("DOMContentLoaded", function() {
+    function login(event) {
+        event.preventDefault();
+
+        const correo = document.getElementById('correo').value;
+        const contrasena = document.getElementById('contrasena').value;
+
+        // Simulando inicio de sesión exitoso
+        if (correo === 'cristofer@gmail.com' && contrasena === 'cristofer123') {
+            // Ocultar el formulario de login
+            document.getElementById('login-section').classList.add('oculto');
+
+            // Mostrar la sección de gestión
+            document.getElementById('gestion-section').classList.remove('oculto');
+        } else {
+            alert('Correo o contraseña incorrectos');
+        }
+    }
+
+    // Asignar la función al formulario
+    const loginForm = document.querySelector('form[onsubmit="login(event);"]');
+    if (loginForm) {
+        loginForm.onsubmit = login;
+    }
+});
+
+
         async function cargarProductos() {
             const response = await fetch('/api/productos');
             const productos = await response.json();
@@ -278,7 +355,6 @@ tr:nth-child(even) {
 
 // Llama a esta función con el ID de la venta cuando se haga clic en "detalles"
 obtenerDetallesVenta(1); // Reemplaza 1 con el ID de la venta que deseas obtener
-
 async function cargarProductos() {
     const response = await fetch('/api/productos');
     const productos = await response.json();
@@ -298,6 +374,7 @@ async function cargarProductos() {
                 <td>${producto.stock}</td>
                 <td>${producto.categoria}</td>
                 <td>
+                    <button onclick="editarProducto(${producto.id_producto}, '${producto.nombre}', ${producto.precio}, ${producto.stock}, '${producto.categoria}')">Editar</button>
                     <button onclick="eliminarProducto(${producto.id_producto})">Eliminar</button>
                 </td>
             </tr>
@@ -310,21 +387,75 @@ async function cargarProductos() {
     });
 }
 
+function editarProducto(id, nombre, precio, stock, categoria) {
+    document.getElementById('nombre').value = nombre;
+    document.getElementById('precio').value = precio;
+    document.getElementById('stock').value = stock;
+    document.getElementById('categoria').value = categoria;
+    document.getElementById('producto-id').value = id; // Set the ID in a hidden input
+}
+
+async function agregarProducto() {
+    const id = document.getElementById('producto-id').value; // Get the product ID
+    const nombre = document.getElementById('nombre').value;
+    const precio = document.getElementById('precio').value;
+    const stock = document.getElementById('stock').value;
+    const categoria = document.getElementById('categoria').value;
+
+    if (id) {
+        // If ID exists, update the product
+        await fetch(`/api/productos/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ nombre, precio, stock, categoria }),
+        });
+    } else {
+        // Else create a new product
+        await fetch('/api/productos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ nombre, precio, stock, categoria }),
+        });
+    }
+
+    cargarProductos();
+    document.getElementById('form-producto').reset();
+    document.getElementById('producto-id').value = ''; // Reset the ID after submission
+}
+
 
 
     </script>
 </head>
 <body>
+<!-- Sección de login -->
+<div id="login-section">
+    <h1>Iniciar Sesión</h1>
+    <form onsubmit="login(event);">
+        <input type="text" id="correo" placeholder="Correo electrónico" required>
+        <input type="password" id="contrasena" placeholder="Contraseña" required>
+        <button type="submit">Iniciar Sesión</button>
+    </form>
+</div>
+
+<!-- Sección de gestión de productos y ventas, oculta por defecto -->
+<div id="gestion-section" class="oculto">
     <h1>Gestión de Productos</h1>
 
     <h2>Agregar Producto</h2>
     <form id="form-producto" onsubmit="event.preventDefault(); agregarProducto();">
+        <input type="hidden" id="producto-id" value=""> <!-- Hidden input for product ID -->
         <input type="text" id="nombre" placeholder="Nombre" required>
         <input type="number" id="precio" placeholder="Precio" step="0.01" required>
         <input type="number" id="stock" placeholder="Stock" required>
         <input type="text" id="categoria" placeholder="Categoría" required>
         <button type="submit">Agregar Producto</button>
     </form>
+    
 
     <h2>Lista de Productos</h2>
     <table border="1">
@@ -366,5 +497,7 @@ async function cargarProductos() {
     </table>
 
     <div id="detalles-venta"></div>
+</div>
+
 </body>
 </html>

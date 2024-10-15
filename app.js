@@ -166,6 +166,24 @@ app.get('/api/detalle_ventas/:id_venta', async (req, res) => {
     }
 });
 
+    // Ruta para actualizar un producto
+app.put('/api/productos/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nombre, precio, stock, categoria } = req.body;
+    try {
+        await pool.request()
+            .input('id', sql.Int, id)
+            .input('nombre', sql.NVarChar, nombre)
+            .input('precio', sql.Decimal(10, 2), precio)
+            .input('stock', sql.Int, stock)
+            .input('categoria', sql.NVarChar, categoria)
+            .query('UPDATE productos SET nombre = @nombre, precio = @precio, stock = @stock, categoria = @categoria WHERE id_producto = @id');
+        res.status(200).send('Producto actualizado');
+    } catch (error) {
+        console.error('Error al actualizar producto:', error);
+        res.status(500).send('Error al actualizar producto');
+    }
+});
 
 
     app.listen(PORT, () => {
