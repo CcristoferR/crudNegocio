@@ -1,0 +1,3 @@
+
+# Ignorar la carpeta de módulos de Node.js
+node_modules/

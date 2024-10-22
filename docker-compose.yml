@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .  # Indica que el Dockerfile está en el mismo directorio
+    ports:
+      - "3000:3000"  # Expones el puerto 3000
+    environment:  # Aquí defines las variables de entorno directamente
+      DB_HOST: negocio.database.windows.net
+      DB_USER: cristofer
+      DB_PASSWORD: 2k20Cris1a2s3d4f
+      DB_NAME: Negocio
+      PORT: 3000
+    volumes:
+      - .:/usr/src/app  # Monta el directorio actual en el contenedor

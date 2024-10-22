@@ -2,16 +2,13 @@
   "name": "sistemaventasnube",
   "version": "1.0.0",
   "main": "app.js",
- "scripts": {
+  "scripts": {
+    "start": "node app.js",  
     "test": "echo \"No tests specified\" && exit 0"
-},
-
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "mssql": "^11.0.1"
   }
